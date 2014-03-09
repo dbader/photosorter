@@ -1,6 +1,9 @@
 photosorter
 ===========
 
+![](https://api.travis-ci.org/dbader/photosorter.png) ![](https://coveralls.io/repos/dbader/photosorter/badge.png)
+
+
 Keeps my photos organized on Dropbox.
 
 ## Setup
