@@ -1,0 +1,6 @@
+ExifRead==1.4.2
+pytest==2.5.2
+pytest-xdist==1.10
+watchdog==0.7.1
+argcomplete==0.7.0
+mock==1.0.1
