@@ -7,6 +7,8 @@ $ py.test -f test_sorter.py -v
 
 """
 from datetime import datetime
+import os
+import time
 import unittest
 
 import mock
@@ -14,7 +16,42 @@ import mock
 import sorter
 
 
+def set_mtime(path, dt):
+    mtime = time.mktime(dt.timetuple())
+    os.utime(path, (-1, mtime))
+
+
+def reset_mtimes():
+    """
+    Reset the mtimes on our test files because git doesn't keep them.
+    """
+    set_mtime(
+        'test_examples/2004-05-07 20.16.31.jpg',
+        datetime(2004, 5, 7, 11, 16, 31)
+    )
+    set_mtime(
+        'test_examples/2006-09-09 07.00.24.jpg',
+        datetime(2006, 9, 8, 22, 0, 24)
+    )
+    set_mtime(
+        'test_examples/2014-02-06 09.15.17.jpg',
+        datetime(2014, 2, 6, 9, 15, 17)
+    )
+    set_mtime(
+        'test_examples/no-exif.jpg',
+        datetime(2014, 2, 23, 21, 47, 14)
+    )
+    set_mtime(
+        'test_examples/test.png',
+        datetime(2014, 3, 8, 18, 31, 35)
+    )
+
+
 class RenamerTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        reset_mtimes()
+
     def test_basename_from_datetime(self):
         case = sorter.basename_from_datetime(
             datetime(2004, 5, 7, 20, 16, 31)
@@ -149,6 +186,10 @@ class RenamerTests(unittest.TestCase):
 
 
 class CreationDateTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        reset_mtimes()
+
     def test_file_creation_date(self):
         self.assertEquals(
             sorter.file_creation_date('test_examples/2004-05-07 20.16.31.jpg'),
