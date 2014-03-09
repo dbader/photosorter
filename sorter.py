@@ -2,7 +2,8 @@
 """
 Inspired by https://github.com/wting/exifrenamer
 
-watchmedo shell-command --wait --recursive --ignore-directories --command='./sorter.py test/dst "${watch_src_path}"' test/src
+watchmedo shell-command --wait --recursive --ignore-directories \
+    --command='./sorter.py test/dst "${watch_src_path}"' test/src
 
 todo:
     X ensure we don't overwrite files; append a counter: -1, -2, -3 etc.

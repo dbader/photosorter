@@ -148,7 +148,6 @@ class RenamerTests(unittest.TestCase):
         )
 
 
-
 class CreationDateTests(unittest.TestCase):
     def test_file_creation_date(self):
         self.assertEquals(

@@ -1,0 +1,14 @@
+language: python
+
+python:
+    - "2.7"
+
+install:
+    - pip install pytest-cov
+    - pip install pytest-pep8
+    - pip install coveralls
+
+script: py.test -v --pep8 --cov *.py --cov-report term-missing
+
+after_success:
+    - coveralls
