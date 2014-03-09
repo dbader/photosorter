@@ -5,11 +5,9 @@ python:
 
 install:
     - pip install ExifRead
-    - pip install pytest-cov
-    - pip install pytest-pep8
-    - pip install coveralls
+    - pip install pytest-cov pytest-pep8 coveralls
 
-script: py.test -v --pep8 --cov *.py --cov-report term-missing
+script: py.test
 
 after_success:
     - coveralls
