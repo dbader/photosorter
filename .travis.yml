@@ -4,6 +4,7 @@ python:
     - "2.7"
 
 install:
+    - pip install ExifRead
     - pip install pytest-cov
     - pip install pytest-pep8
     - pip install coveralls
