@@ -12,6 +12,7 @@ Keeps my photos organized on Dropbox.
     $ virtualenv venv
     $ . venv/bin/activate
     $ pip install -r requirements.txt
+    $ pip install -r dev-requirements.txt
     $ py.test
 
 ## Run
