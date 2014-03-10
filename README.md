@@ -3,7 +3,6 @@ photosorter
 
 ![](https://api.travis-ci.org/dbader/photosorter.png) ![](https://coveralls.io/repos/dbader/photosorter/badge.png)
 
-
 Keeps my photos organized on Dropbox.
 
 ## Setup
@@ -17,6 +16,6 @@ Keeps my photos organized on Dropbox.
 
 ## Run
 
-Watch `src_dir` and sort incoming photos into `dst_dir`.
+Watch `src_dir` and sort incoming photos into `dest_dir`.
 
-    $ watchmedo shell-command --wait --recursive --ignore-directories --command='./sorter.py dst_dir "${watch_src_path}"' src_dir
+    $ ./sorter.py src_dir dest_dir

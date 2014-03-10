@@ -7,7 +7,7 @@ watchmedo shell-command --wait --recursive --ignore-directories \
 
 todo:
     X ensure we don't overwrite files; append a counter: -1, -2, -3 etc.
-    - check other files in the overwrite chain and skip if sha1s are equal
+    X check other files in the overwrite chain and skip if sha1s are equal
     - fall back to now() if exif time is too old to be true
     - normalize filenames: jpeg -> jpg
 """
@@ -17,8 +17,12 @@ import hashlib
 import os
 import re
 import shutil
+import time
 
 import exifread
+import watchdog
+import watchdog.events
+import watchdog.observers
 
 
 class HashCache(object):
@@ -229,10 +233,43 @@ def exif_timestamp_to_datetime(ts):
     return datetime.datetime(*elements)
 
 
+class EventHandler(watchdog.events.PatternMatchingEventHandler):
+    def __init__(self, target_folder):
+        self.target_folder = target_folder
+        super(EventHandler, self).__init__(ignore_directories=True)
+
+    # def on_any_event(self, event):
+        # print event
+
+    def on_created(self, event):
+        # print event.src_path
+        move_file(self.target_folder, event.src_path)
+
+    def on_modified(self, event):
+        # print event.src_path
+        move_file(self.target_folder, event.src_path)
+
+    def on_moved(self, event):
+        # print event.dest_path
+        move_file(self.target_folder, event.dest_path)
+
+
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('target_folder')
-    parser.add_argument('filename')
+    parser.add_argument('src_folder')
+    parser.add_argument('dest_folder')
     args = parser.parse_args()
-    move_file(args.target_folder, args.filename)
+
+    event_handler = EventHandler(args.dest_folder)
+    observer = watchdog.observers.Observer()
+    observer.schedule(event_handler, args.src_folder, recursive=True)
+    observer.start()
+
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        observer.stop()
+
+    observer.join()
