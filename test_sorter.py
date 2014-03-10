@@ -34,6 +34,10 @@ def reset_mtimes():
         datetime(2006, 9, 8, 22, 0, 24)
     )
     set_mtime(
+        'test_examples/2006-09-09 07.00.24-alt.jpg',
+        datetime(2006, 9, 9, 7, 0, 24)
+    )
+    set_mtime(
         'test_examples/2014-02-06 09.15.17.jpg',
         datetime(2014, 2, 6, 9, 15, 17)
     )
@@ -123,24 +127,6 @@ class RenamerTests(unittest.TestCase):
         self.assertFalse(sorter.is_valid_filename('test.txt'))
         self.assertFalse(sorter.is_valid_filename('test'))
 
-    # def test_duplicate_marker_index(self):
-    #     self.assertEquals(
-    #         sorter.duplicate_marker_index('2006-09-09 07.00.24-2.jpg'),
-    #         2
-    #     )
-    #     self.assertEquals(
-    #         sorter.duplicate_marker_index('2006-09-09 07.00.24-123.jpg'),
-    #         123
-    #     )
-    #     self.assertEquals(
-    #         sorter.duplicate_marker_index('2006-09-09 07.00.24.jpg'),
-    #         None
-    #     )
-    #     self.assertEquals(
-    #         sorter.duplicate_marker_index('2006-09-09 07.00.24-9.png'),
-    #         9
-    #     )
-
     def test_resolve_duplicate(self):
         case = sorter.resolve_duplicate(
             'test_examples/root/2006/2006-09/2006-09-09 07.00.24.jpg'
@@ -176,13 +162,23 @@ class RenamerTests(unittest.TestCase):
         move_mock.reset_mock()
         sorter.move_file(
             'test_examples/root/',
-            'test_examples/2006-09-09 07.00.24.jpg'
+            'test_examples/2006-09-09 07.00.24-alt.jpg'
         )
         makedirs_mock.assert_called_with('test_examples/root/2006/2006-09')
         move_mock.assert_called_with(
-            'test_examples/2006-09-09 07.00.24.jpg',
+            'test_examples/2006-09-09 07.00.24-alt.jpg',
             'test_examples/root/2006/2006-09/2006-09-09 07.00.24-2.jpg'
         )
+
+        # Ignore duplicates.
+        makedirs_mock.reset_mock()
+        move_mock.reset_mock()
+        sorter.move_file(
+            'test_examples/root/',
+            'test_examples/2006-09-09 07.00.24.jpg'
+        )
+        self.assertFalse(makedirs_mock.called)
+        self.assertFalse(move_mock.called)
 
 
 class CreationDateTests(unittest.TestCase):
@@ -255,3 +251,14 @@ class CreationDateTests(unittest.TestCase):
             sorter.creation_date('test_examples/test.png'),
             datetime(2014, 3, 8, 18, 31, 35)
         )
+
+
+class HashCacheTests(unittest.TestCase):
+    def test(self):
+        cache = sorter.HashCache()
+        target_folder = 'test_examples/root/2006/2006-09/'
+        f1 = 'test_examples/root/2006/2006-09/2006-09-09 07.00.24.jpg'
+        f2 = 'test_examples/2014-02-06 09.15.17.jpg'
+
+        self.assertTrue(cache.has_file(target_folder, f1))
+        self.assertFalse(cache.has_file(target_folder, f2))

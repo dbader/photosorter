@@ -11,12 +11,81 @@ todo:
     - fall back to now() if exif time is too old to be true
     - normalize filenames: jpeg -> jpg
 """
+import collections
 import datetime
+import hashlib
 import os
 import re
 import shutil
 
 import exifread
+
+
+class HashCache(object):
+    """
+    Gives a quick answer to the question if there's an identical file
+    in the given target folder.
+
+    """
+    def __init__(self):
+        # folder -> (hashes, filename -> hash)
+        self.hashes = collections.defaultdict(lambda: (set(), dict()))
+
+    def has_file(self, target_folder, path):
+        # Strip trailing slashes etc.
+        target_folder = os.path.normpath(target_folder)
+
+        # Update the cache by ensuring that we have the hashes of all
+        # files in the target folder. `_add_file` is smart enough to
+        # skip any files we already hashed.
+        for f in self._files_in_folder(target_folder):
+            self._add_file(f)
+
+        # Hash the new file at `path`.
+        file_hash = self._hash(path)
+
+        # Check if we already have an identical file in the target folder.
+        return file_hash in self.hashes[target_folder][0]
+
+    def _add_file(self, path):
+        # Bail out if we already have a hash for the file at `path`.
+        folder = self._target_folder(path)
+        if path in self.hashes[folder][1]:
+            return
+
+        file_hash = self._hash(path)
+
+        basename = os.path.basename(path)
+        self.hashes[folder][0].add(file_hash)
+        self.hashes[folder][1][basename] = file_hash
+
+    @staticmethod
+    def _hash(path):
+        hasher = hashlib.sha1()
+        with open(path, 'rb') as f:
+            data = f.read()
+            hasher.update(data)
+        return hasher.hexdigest()
+
+    @staticmethod
+    def _target_folder(path):
+        return os.path.dirname(path)
+
+    @staticmethod
+    def _files_in_folder(folder_path):
+        """
+        Iterable with full paths to all files in `folder_path`.
+        """
+        try:
+            names = (
+                os.path.join(folder_path, f) for f in os.listdir(folder_path)
+            )
+            return [f for f in names if os.path.isfile(f)]
+        except OSError:
+            return []
+
+
+hash_cache = HashCache()
 
 
 def move_file(root_folder, path):
@@ -28,6 +97,11 @@ def move_file(root_folder, path):
 
     dst = dest_path(root_folder, path)
     dirs = os.path.dirname(dst)
+
+    if hash_cache.has_file(dirs, path):
+        print('%s is a duplicate, skipping' % path)
+        return
+
     try:
         os.makedirs(dirs)
         print('Created folder %s' % dirs)
@@ -38,13 +112,6 @@ def move_file(root_folder, path):
 
     print('Moving %s to %s' % (path, dst))
     shutil.move(path, dst)
-
-
-# def duplicate_marker_index(path):
-#     match = re.match(r'.*-(\d+).[a-z]+$', path)
-#     if not match:
-#         return None
-#     return int(match.groups()[0])
 
 
 def resolve_duplicate(path):
@@ -60,7 +127,7 @@ def resolve_duplicate(path):
         new_fname = '%s-%i%s' % (filename, dedup_index, ext)
         new_path = os.path.join(dirname, new_fname)
         if not os.path.exists(new_path):
-            print('Deduplicating %s to %s' % (path, new_path))
+            # print('Deduplicating %s to %s' % (path, new_path))
             break
         dedup_index += 1
 
