@@ -9,20 +9,6 @@ It watches a *source directory* for modifications and moves new image
 files to a *target directory* depending on when the photo was taken,
 using EXIF data and creation date as a fallback.
 
-The result looks like this:
-
-├── 2013
-│   ├── 2013-01
-│   ├── 2013-02
-│   ├── ...
-│   └── 2013-12
-├── 2014
-│   ├── 2014-01
-│   ├── 2014-02
-│   ├── ...
-│   └── 2014-12
-├── ...
-
 Inspired by
     - http://simplicitybliss.com/exporting-your-iphoto-library-to-dropbox/
     - https://github.com/wting/exifrenamer
