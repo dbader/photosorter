@@ -23,9 +23,9 @@ The result looks like this:
 ```
 
 Inspired by
-    - http://simplicitybliss.com/exporting-your-iphoto-library-to-dropbox/
-    - https://github.com/wting/exifrenamer
-    - http://chambersdaily.com/learning-to-love-photo-management/
+- http://simplicitybliss.com/exporting-your-iphoto-library-to-dropbox/
+- https://github.com/wting/exifrenamer
+- http://chambersdaily.com/learning-to-love-photo-management/
 
 ## Setup
     $ git clone git@github.com:dbader/photosorter.git
