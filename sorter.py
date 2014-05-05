@@ -1,15 +1,33 @@
 #!/usr/bin/env python
 """
-Inspired by https://github.com/wting/exifrenamer
+photosorter - https://github.com/dbader/photosorter
+---------------------------------------------------
 
-watchmedo shell-command --wait --recursive --ignore-directories \
-    --command='./sorter.py test/dst "${watch_src_path}"' test/src
+A little Python daemon to keep my photos organized on Dropbox.
 
-todo:
-    X ensure we don't overwrite files; append a counter: -1, -2, -3 etc.
-    X check other files in the overwrite chain and skip if sha1s are equal
-    - fall back to now() if exif time is too old to be true
-    - normalize filenames: jpeg -> jpg
+It watches a *source directory* for modifications and moves new image
+files to a *target directory* depending on when the photo was taken,
+using EXIF data and creation date as a fallback.
+
+The result looks like this:
+
+├── 2013
+│   ├── 2013-01
+│   ├── 2013-02
+│   ├── ...
+│   └── 2013-12
+├── 2014
+│   ├── 2014-01
+│   ├── 2014-02
+│   ├── ...
+│   └── 2014-12
+├── ...
+
+Inspired by
+    - http://simplicitybliss.com/exporting-your-iphoto-library-to-dropbox/
+    - https://github.com/wting/exifrenamer
+    - http://chambersdaily.com/learning-to-love-photo-management/
+
 """
 import collections
 import datetime

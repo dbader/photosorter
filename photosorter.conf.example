@@ -1,0 +1,16 @@
+# Upstart example config for photosorter.
+# Move this to /etc/init and rename it to photosorter.conf
+# https://github.com/dbader/photosorter
+
+start on runlevel [2345]
+stop on runlevel [016]
+
+respawn
+setuid myuser
+
+chdir /home/myuser/photosorter
+
+script
+    . venv/bin/activate
+    exec ./sorter.py "/home/myuser/Dropbox/Camera Uploads" "/home/myuser/Dropbox/Photos"
+end script
