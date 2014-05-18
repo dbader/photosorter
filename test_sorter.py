@@ -262,3 +262,9 @@ class HashCacheTests(unittest.TestCase):
 
         self.assertTrue(cache.has_file(target_folder, f1))
         self.assertFalse(cache.has_file(target_folder, f2))
+
+
+class ScriptTests(unittest.TestCase):
+    def test(self):
+        with self.assertRaises(SystemExit):
+            sorter.main(['sorter.py'])

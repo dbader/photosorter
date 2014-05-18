@@ -21,6 +21,7 @@ import hashlib
 import os
 import re
 import shutil
+import sys
 import time
 
 import exifread
@@ -258,12 +259,12 @@ class EventHandler(watchdog.events.PatternMatchingEventHandler):
         move_file(self.target_folder, event.dest_path)
 
 
-if __name__ == '__main__':
+def main(argv):
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('src_folder')
     parser.add_argument('dest_folder')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     event_handler = EventHandler(args.dest_folder)
     observer = watchdog.observers.Observer()
@@ -277,3 +278,8 @@ if __name__ == '__main__':
         observer.stop()
 
     observer.join()
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv))
