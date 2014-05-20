@@ -258,7 +258,7 @@ def parse_args(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument('src_folder')
     parser.add_argument('dest_folder')
-    return parser.parse_args(argv)
+    return parser.parse_args(argv[1:])
 
 
 def run(src_folder, dest_folder):
