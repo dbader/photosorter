@@ -84,6 +84,7 @@ class HashCache(object):
     def _files_in_folder(folder_path):
         """
         Iterable with full paths to all files in `folder_path`.
+
         """
         try:
             names = (
@@ -165,18 +166,20 @@ def folder_from_datetime(dt):
 
 
 def filename_from_datetime(dt, path):
-    '''
+    """
     Returns basename + original extension.
-    '''
+
+    """
     base = basename_from_datetime(dt)
     ext = os.path.splitext(path)[1]
     return base + ext.lower()
 
 
 def basename_from_datetime(dt):
-    '''
+    """
     Returns a string formatted like this '2004-05-07 20.16.31'.
-    '''
+
+    """
     return dt.strftime('%Y-%m-%d %H.%M.%S')
 
 
@@ -188,9 +191,12 @@ def creation_date(path):
 
 
 def file_creation_date(path):
-    # Use mtime as creation date because ctime returns the
-    # the time when the file's inode was last modified; which is
-    # wrong and almost always later.
+    """
+    Use mtime as creation date because ctime returns the
+    the time when the file's inode was last modified; which is
+    wrong and almost always later.
+
+    """
     mtime = os.path.getmtime(path)
     return datetime.datetime.fromtimestamp(mtime)
 
