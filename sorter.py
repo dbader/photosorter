@@ -230,7 +230,7 @@ def exif_creation_timestamp(path):
 
 
 def exif_timestamp_to_datetime(ts):
-    elements = map(int, re.split(':| ', ts))
+    elements = [int(_) for _ in re.split(':| ', ts)]
 
     if len(elements) != 6:
         raise BadExifTimestampError
@@ -243,32 +243,28 @@ class EventHandler(watchdog.events.PatternMatchingEventHandler):
         self.target_folder = target_folder
         super(EventHandler, self).__init__(ignore_directories=True)
 
-    # def on_any_event(self, event):
-        # print event
-
     def on_created(self, event):
-        # print event.src_path
         move_file(self.target_folder, event.src_path)
 
     def on_modified(self, event):
-        # print event.src_path
         move_file(self.target_folder, event.src_path)
 
     def on_moved(self, event):
-        # print event.dest_path
         move_file(self.target_folder, event.dest_path)
 
 
-def main(argv):
+def parse_args(argv):
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('src_folder')
     parser.add_argument('dest_folder')
-    args = parser.parse_args(argv)
+    return parser.parse_args(argv)
 
-    event_handler = EventHandler(args.dest_folder)
+
+def run(src_folder, dest_folder):
+    event_handler = EventHandler(dest_folder)
     observer = watchdog.observers.Observer()
-    observer.schedule(event_handler, args.src_folder, recursive=True)
+    observer.schedule(event_handler, src_folder, recursive=True)
     observer.start()
 
     try:
@@ -278,6 +274,11 @@ def main(argv):
         observer.stop()
 
     observer.join()
+
+
+def main(argv):
+    args = parse_args(argv)
+    run(args.src_folder, args.dest_folder)
     return 0
 
 
