@@ -265,6 +265,11 @@ class HashCacheTests(unittest.TestCase):
 
 
 class ScriptTests(unittest.TestCase):
-    def test(self):
+    def test_parse_args(self):
+        args = sorter.parse_args('sorter.py src/ dest/'.split())
+        self.assertEqual(args.src_folder, 'src/')
+        self.assertEqual(args.dest_folder, 'dest/')
+
+    def test_main(self):
         with self.assertRaises(SystemExit):
             sorter.main(['sorter.py'])
