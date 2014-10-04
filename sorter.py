@@ -146,7 +146,7 @@ def resolve_duplicate(path):
 
 def is_valid_filename(path):
     ext = os.path.splitext(path)[1].lower()
-    return ext in ['.jpg', '.jpeg', '.png']
+    return ext in ['.jpg', '.jpeg', '.png', '.mov']
 
 
 def dest_path(root_folder, path):
