@@ -5,7 +5,7 @@ photosorter
 
 A little Python daemon to keep my photos organized on Dropbox.
 
-It watches a *source directory* for modifications and moves new image files to a *target directory* depending on when the photo was taken, using EXIF data and creation date as a fallback. 
+It watches a *source directory* for modifications and moves new image files to a *target directory* depending on when the photo was taken, using EXIF data and creation date as a fallback.
 
 Directory and file names follow a simple naming convention (`YYYY-MM/YYYY-MM-DD hh:mm:ss.ext`) that keeps everything neatly organized. Duplicates are detected and ignored based on their SHA1 hash. Photos taken in the same instant get deduplicated by adding a suffix (`-1`, `-2`, etc) to their filenames.
 
@@ -68,6 +68,6 @@ Watch `src_dir` and sort incoming photos into `dest_dir`.
 
 Daniel Bader – [@dbader_org](https://twitter.com/dbader_org) – mail@dbader.org
 
-Distributed under the MIT license. See ``LICENSE.txt`` for more information.
+Distributed under the MIT license. See ``LICENSE`` for more information.
 
 https://github.com/dbader/photosorter
