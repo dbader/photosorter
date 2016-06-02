@@ -15,6 +15,7 @@ Inspired by
     - http://chambersdaily.com/learning-to-love-photo-management/
 
 """
+import argparse
 import collections
 import datetime
 import hashlib
@@ -29,18 +30,21 @@ import watchdog
 import watchdog.events
 import watchdog.observers
 
+from typing import List, Optional, Mapping, Dict, Set, Tuple  # noqa
 
-class HashCache(object):
+
+class HashCache:
     """
     Gives a quick answer to the question if there's an identical file
     in the given target folder.
-
     """
-    def __init__(self):
+    def __init__(self) -> None:
         # folder -> (hashes, filename -> hash)
-        self.hashes = collections.defaultdict(lambda: (set(), dict()))
+        self.hashes = collections.defaultdict(
+            lambda: (set(), dict())
+        )  # type: Mapping[str, Tuple[Set[str], Dict[str, str]]]
 
-    def has_file(self, target_folder, path):
+    def has_file(self, target_folder: str, path: str) -> bool:
         # Strip trailing slashes etc.
         target_folder = os.path.normpath(target_folder)
 
@@ -56,7 +60,7 @@ class HashCache(object):
         # Check if we already have an identical file in the target folder.
         return file_hash in self.hashes[target_folder][0]
 
-    def _add_file(self, path):
+    def _add_file(self, path: str):
         # Bail out if we already have a hash for the file at `path`.
         folder = self._target_folder(path)
         if path in self.hashes[folder][1]:
@@ -69,7 +73,7 @@ class HashCache(object):
         self.hashes[folder][1][basename] = file_hash
 
     @staticmethod
-    def _hash(path):
+    def _hash(path: str) -> str:
         hasher = hashlib.sha1()
         with open(path, 'rb') as f:
             data = f.read()
@@ -77,14 +81,13 @@ class HashCache(object):
         return hasher.hexdigest()
 
     @staticmethod
-    def _target_folder(path):
+    def _target_folder(path: str) -> str:
         return os.path.dirname(path)
 
     @staticmethod
-    def _files_in_folder(folder_path):
+    def _files_in_folder(folder_path: str) -> List[str]:
         """
         Iterable with full paths to all files in `folder_path`.
-
         """
         try:
             names = (
@@ -98,7 +101,7 @@ class HashCache(object):
 hash_cache = HashCache()
 
 
-def move_file(root_folder, path):
+def move_file(root_folder: str, path: str):
     if not os.path.exists(path):
         return
 
@@ -115,16 +118,16 @@ def move_file(root_folder, path):
     try:
         os.makedirs(dirs)
         print('Created folder %s' % dirs)
-    except OSError as e:
+    except OSError as ex:
         # Catch "File exists"
-        if e.errno != 17:
-            raise e
+        if ex.errno != 17:
+            raise ex
 
     print('Moving %s to %s' % (path, dst))
     shutil.move(path, dst)
 
 
-def resolve_duplicate(path):
+def resolve_duplicate(path: str) -> str:
     if not os.path.exists(path):
         return path
 
@@ -144,74 +147,72 @@ def resolve_duplicate(path):
     return new_path
 
 
-def is_valid_filename(path):
+def is_valid_filename(path: str) -> bool:
     ext = os.path.splitext(path)[1].lower()
     return ext in ['.jpg', '.jpeg', '.png', '.mov']
 
 
-def dest_path(root_folder, path):
+def dest_path(root_folder: str, path: str) -> str:
     cdate = creation_date(path)
     path = path_from_datetime(root_folder, cdate, path)
     return resolve_duplicate(path)
 
 
-def path_from_datetime(root_folder, dt, path):
+def path_from_datetime(root_folder: str, dt: datetime.datetime,
+                       path: str) -> str:
     folder = folder_from_datetime(dt)
     filename = filename_from_datetime(dt, path)
     return os.path.join(root_folder, folder, filename)
 
 
-def folder_from_datetime(dt):
+def folder_from_datetime(dt: datetime.datetime) -> str:
     return dt.strftime('%Y' + os.sep + '%Y-%m')
 
 
-def filename_from_datetime(dt, path):
+def filename_from_datetime(dt: datetime.datetime, path: str) -> str:
     """
     Returns basename + original extension.
-
     """
     base = basename_from_datetime(dt)
     ext = os.path.splitext(path)[1]
     return base + ext.lower()
 
 
-def basename_from_datetime(dt):
+def basename_from_datetime(dt: datetime.datetime) -> str:
     """
     Returns a string formatted like this '2004-05-07 20.16.31'.
-
     """
     return dt.strftime('%Y-%m-%d %H.%M.%S')
 
 
-def creation_date(path):
+def creation_date(path: str) -> datetime.datetime:
     exif_date = exif_creation_date(path)
     if exif_date:
         return exif_date
     return file_creation_date(path)
 
 
-def file_creation_date(path):
+def file_creation_date(path: str) -> datetime.datetime:
     """
     Use mtime as creation date because ctime returns the
     the time when the file's inode was last modified; which is
     wrong and almost always later.
-
     """
     mtime = os.path.getmtime(path)
     return datetime.datetime.fromtimestamp(mtime)
 
 
-def exif_creation_date(path):
+def exif_creation_date(path: str) -> Optional[datetime.datetime]:
     try:
         ts = exif_creation_timestamp(path)
-    except MissingExifTimestampError as e:
-        print(e)
+    except MissingExifTimestampError as ex:
+        print(ex)
         return None
 
     try:
         return exif_timestamp_to_datetime(ts)
-    except BadExifTimestampError:
-        print(e)
+    except BadExifTimestampError as ex:
+        print(ex)
         return None
 
 
@@ -223,7 +224,7 @@ class MissingExifTimestampError(Exception):
     pass
 
 
-def exif_creation_timestamp(path):
+def exif_creation_timestamp(path: str) -> str:
     with open(path, 'rb') as f:
         tags = exifread.process_file(f, details=False)
 
@@ -235,17 +236,18 @@ def exif_creation_timestamp(path):
     raise MissingExifTimestampError()
 
 
-def exif_timestamp_to_datetime(ts):
+def exif_timestamp_to_datetime(ts: str) -> datetime.datetime:
     elements = [int(_) for _ in re.split(':| ', ts)]
 
     if len(elements) != 6:
         raise BadExifTimestampError
 
-    return datetime.datetime(*elements)
+    return datetime.datetime(elements[0], elements[1], elements[2],
+                             elements[3], elements[4], elements[5])
 
 
 class EventHandler(watchdog.events.PatternMatchingEventHandler):
-    def __init__(self, target_folder):
+    def __init__(self, target_folder: str) -> None:
         self.target_folder = target_folder
         super(EventHandler, self).__init__(ignore_directories=True)
 
@@ -259,15 +261,14 @@ class EventHandler(watchdog.events.PatternMatchingEventHandler):
         move_file(self.target_folder, event.dest_path)
 
 
-def parse_args(argv):
-    import argparse
+def parse_args(argv: List[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument('src_folder')
     parser.add_argument('dest_folder')
     return parser.parse_args(argv[1:])
 
 
-def run(src_folder, dest_folder):
+def run(src_folder: str, dest_folder: str):
     event_handler = EventHandler(dest_folder)
     observer = watchdog.observers.Observer()
     observer.schedule(event_handler, src_folder, recursive=True)
@@ -282,8 +283,10 @@ def run(src_folder, dest_folder):
     observer.join()
 
 
-def main(argv):
+def main(argv: List[str]) -> int:
     args = parse_args(argv)
+    print('Watching {src} for changes, destination folder {dest}'.format(
+        src=args.src_folder, dest=args.dest_folder))
     run(args.src_folder, args.dest_folder)
     return 0
 
