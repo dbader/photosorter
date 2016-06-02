@@ -1,6 +1,6 @@
-mock==1.0.1
-pytest==2.6.3
-pytest-xdist==1.11
-pytest-cov==1.8.0
-pytest-pep8==1.0.6
-coveralls==0.4.4
+-r requirements.txt
+coveralls==1.1
+pytest-cov==2.2.1
+pytest-xdist==1.14
+pytest-flake8==0.5
+pytest==2.9.2

@@ -43,9 +43,8 @@ Inspired by
 ## Setup
     $ git clone git@github.com:dbader/photosorter.git
     $ cd photosorter
-    $ virtualenv venv
+    $ pyvenv venv
     $ . venv/bin/activate
-    $ pip install -r requirements.txt
     $ pip install -r dev-requirements.txt
     $ py.test
 
