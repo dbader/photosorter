@@ -266,13 +266,6 @@ class EventHandler(watchdog.events.PatternMatchingEventHandler):
         self.shared_queue.put(event.src_path)
 
 
-def parse_args(argv: List[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
-    parser.add_argument('src_folder')
-    parser.add_argument('dest_folder')
-    return parser.parse_args(argv[1:])
-
-
 class MoveFileThread(threading.Thread):
     def __init__(self, shared_queue: queue.Queue, dest_folder: str) -> None:
         super().__init__()
@@ -284,7 +277,7 @@ class MoveFileThread(threading.Thread):
         while self.is_running:
             try:
                 file_path = self.shared_queue.get(block=False, timeout=1)
-            except queue.Empty:
+            except queue.Empty:  # type: ignore
                 continue
             print('MoveFileThread got file', file_path)
             try:
@@ -298,8 +291,15 @@ class MoveFileThread(threading.Thread):
         self.is_running = False
 
 
+def parse_args(argv: List[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('src_folder')
+    parser.add_argument('dest_folder')
+    return parser.parse_args(argv[1:])
+
+
 def run(src_folder: str, dest_folder: str):
-    shared_queue = queue.Queue()
+    shared_queue = queue.Queue()  # type: queue.Queue[str]
     move_thread = MoveFileThread(shared_queue, dest_folder)
     move_thread.start()
 
