@@ -19,6 +19,7 @@ import argparse
 import collections
 import datetime
 import hashlib
+import logging
 import os
 import queue
 import re
@@ -33,6 +34,10 @@ import watchdog.events
 import watchdog.observers
 
 from typing import List, Optional, Mapping, Dict, Set, Tuple  # noqa
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('photosorter')
 
 
 class HashCache:
@@ -105,29 +110,29 @@ hash_cache = HashCache()
 
 def move_file(root_folder: str, path: str):
     if not os.path.exists(path):
-        print('File no longer exists', path)
+        logger.debug('File no longer exists: %s', path)
         return
 
     if not is_valid_filename(path):
-        print('Not a valid filename', path)
+        logger.debug('Not a valid filename: %s', path)
         return
 
     dst = dest_path(root_folder, path)
     dirs = os.path.dirname(dst)
 
     if hash_cache.has_file(dirs, path):
-        print('%s is a duplicate, skipping' % path)
+        logger.info('%s is a duplicate, skipping', path)
         return
 
     try:
         os.makedirs(dirs)
-        print('Created folder %s' % dirs)
+        logger.debug('Created folder %s', dirs)
     except OSError as ex:
         # Catch "File exists"
         if ex.errno != 17:
             raise ex
 
-    print('Moving %s to %s' % (path, dst))
+    logger.info('Moving %s to %s', path, dst)
     shutil.move(path, dst)
 
 
@@ -144,7 +149,7 @@ def resolve_duplicate(path: str) -> str:
         new_fname = '%s-%i%s' % (filename, dedup_index, ext)
         new_path = os.path.join(dirname, new_fname)
         if not os.path.exists(new_path):
-            # print('Deduplicating %s to %s' % (path, new_path))
+            logger.debug('Deduplicating %s to %s', path, new_path)
             break
         dedup_index += 1
 
@@ -209,14 +214,14 @@ def file_creation_date(path: str) -> datetime.datetime:
 def exif_creation_date(path: str) -> Optional[datetime.datetime]:
     try:
         ts = exif_creation_timestamp(path)
-    except MissingExifTimestampError as ex:
-        print(ex)
+    except MissingExifTimestampError:
+        logger.debug('Missing exif timestamp', exc_info=True)
         return None
 
     try:
         return exif_timestamp_to_datetime(ts)
-    except BadExifTimestampError as ex:
-        print(ex)
+    except BadExifTimestampError:
+        logger.debug('Failed to parse exif timestamp', exc_info=True)
         return None
 
 
@@ -279,13 +284,13 @@ class MoveFileThread(threading.Thread):
                 file_path = self.shared_queue.get(block=False, timeout=1)
             except queue.Empty:  # type: ignore
                 continue
-            print('MoveFileThread got file', file_path)
+            logger.debug('MoveFileThread got file %s', file_path)
             try:
                 move_file(self.dest_folder, file_path)
             except Exception as ex:
-                print(ex)
+                logger.exception(ex)
             self.shared_queue.task_done()
-        print('MoveFileThread exiting')
+        logger.debug('MoveFileThread exiting')
 
     def stop(self) -> None:
         self.is_running = False
@@ -312,11 +317,12 @@ def run(src_folder: str, dest_folder: str):
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
+        logger.info('Shutting down')
         pass
 
     observer.stop()
     observer.join()
-    print('Observer thread stopped')
+    logger.debug('Observer thread stopped')
 
     shared_queue.join()
     move_thread.stop()
@@ -325,8 +331,8 @@ def run(src_folder: str, dest_folder: str):
 
 def main(argv: List[str]) -> int:
     args = parse_args(argv)
-    print('Watching {src} for changes, destination is {dest}'.format(
-        src=args.src_folder, dest=args.dest_folder))
+    logger.info('Watching %s for changes, destination is %s',
+                args.src_folder, args.dest_folder)
     run(args.src_folder, args.dest_folder)
     return 0
 
