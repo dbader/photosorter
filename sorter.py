@@ -20,9 +20,11 @@ import collections
 import datetime
 import hashlib
 import os
+import queue
 import re
 import shutil
 import sys
+import threading
 import time
 
 import exifread
@@ -103,9 +105,11 @@ hash_cache = HashCache()
 
 def move_file(root_folder: str, path: str):
     if not os.path.exists(path):
+        print('File no longer exists', path)
         return
 
     if not is_valid_filename(path):
+        print('Not a valid filename', path)
         return
 
     dst = dest_path(root_folder, path)
@@ -247,18 +251,19 @@ def exif_timestamp_to_datetime(ts: str) -> datetime.datetime:
 
 
 class EventHandler(watchdog.events.PatternMatchingEventHandler):
-    def __init__(self, target_folder: str) -> None:
+    def __init__(self, shared_queue: queue.Queue, target_folder: str) -> None:
+        self.shared_queue = shared_queue
         self.target_folder = target_folder
-        super(EventHandler, self).__init__(ignore_directories=True)
+        super().__init__(ignore_directories=True)
 
     def on_created(self, event):
-        move_file(self.target_folder, event.src_path)
+        self.shared_queue.put(event.src_path)
 
     def on_modified(self, event):
-        move_file(self.target_folder, event.src_path)
+        self.shared_queue.put(event.src_path)
 
     def on_moved(self, event):
-        move_file(self.target_folder, event.dest_path)
+        self.shared_queue.put(event.src_path)
 
 
 def parse_args(argv: List[str]) -> argparse.Namespace:
@@ -268,8 +273,37 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     return parser.parse_args(argv[1:])
 
 
+class MoveFileThread(threading.Thread):
+    def __init__(self, shared_queue: queue.Queue, dest_folder: str) -> None:
+        super().__init__()
+        self.shared_queue = shared_queue
+        self.dest_folder = dest_folder
+        self.is_running = True
+
+    def run(self) -> None:
+        while self.is_running:
+            try:
+                file_path = self.shared_queue.get(block=False, timeout=1)
+            except queue.Empty:
+                continue
+            print('MoveFileThread got file', file_path)
+            try:
+                move_file(self.dest_folder, file_path)
+            except Exception as ex:
+                print(ex)
+            self.shared_queue.task_done()
+        print('MoveFileThread exiting')
+
+    def stop(self) -> None:
+        self.is_running = False
+
+
 def run(src_folder: str, dest_folder: str):
-    event_handler = EventHandler(dest_folder)
+    shared_queue = queue.Queue()
+    move_thread = MoveFileThread(shared_queue, dest_folder)
+    move_thread.start()
+
+    event_handler = EventHandler(shared_queue, dest_folder)
     observer = watchdog.observers.Observer()
     observer.schedule(event_handler, src_folder, recursive=True)
     observer.start()
@@ -278,14 +312,20 @@ def run(src_folder: str, dest_folder: str):
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        observer.stop()
+        pass
 
+    observer.stop()
     observer.join()
+    print('Observer thread stopped')
+
+    shared_queue.join()
+    move_thread.stop()
+    move_thread.join()
 
 
 def main(argv: List[str]) -> int:
     args = parse_args(argv)
-    print('Watching {src} for changes, destination folder {dest}'.format(
+    print('Watching {src} for changes, destination is {dest}'.format(
         src=args.src_folder, dest=args.dest_folder))
     run(args.src_folder, args.dest_folder)
     return 0
